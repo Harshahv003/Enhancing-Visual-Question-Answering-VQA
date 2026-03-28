@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Visual Question Answering | VQA System</title>
+
+  <!-- Google Fonts: Syne (display) + DM Sans (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+
+  <!-- ── Background decoration ───────────────────────────────────────────── -->
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-blob blob-1" aria-hidden="true"></div>
+  <div class="bg-blob blob-2" aria-hidden="true"></div>
+
+  <!-- ── Page wrapper ─────────────────────────────────────────────────────── -->
+  <div class="page-wrapper">
+
+    <!-- Header -->
+    <header class="site-header">
+      <div class="logo-chip">
+        <span class="logo-icon">⬡</span>
+        <span>VQA · AI</span>
+      </div>
+      <h1 class="site-title">Visual Question Answering</h1>
+      <p class="site-subtitle">
+        Upload any image · Ask a question · Get an answer in your language
+      </p>
+    </header>
+
+    <!-- ── Main card ─────────────────────────────────────────────────────── -->
+    <main class="card" id="main-card">
+
+      <!-- Step indicators -->
+      <div class="steps" aria-label="Three steps">
+        <div class="step active" id="step-1">
+          <span class="step-num">1</span>
+          <span class="step-label">Upload Image</span>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step" id="step-2">
+          <span class="step-num">2</span>
+          <span class="step-label">Ask Question</span>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step" id="step-3">
+          <span class="step-num">3</span>
+          <span class="step-label">Get Answer</span>
+        </div>
+      </div>
+
+      <!-- ── Upload zone ──────────────────────────────────────────────────── -->
+      <section class="section upload-section">
+        <label class="upload-label" for="imageInput" id="uploadZone">
+          <div class="upload-icon-wrap">
+            <span class="upload-icon">🖼️</span>
+          </div>
+          <p class="upload-primary">Drop an image here, or <span class="upload-link">browse</span></p>
+          <p class="upload-secondary">PNG · JPG · WEBP · GIF · BMP &nbsp;|&nbsp; max 16 MB</p>
+          <input
+            type="file"
+            id="imageInput"
+            name="image"
+            accept="image/*"
+            class="visually-hidden"
+            aria-label="Upload image"
+          />
+        </label>
+
+        <!-- Image preview -->
+        <div class="preview-wrap hidden" id="previewWrap">
+          <img id="imagePreview" src="" alt="Preview of uploaded image" />
+          <button class="remove-btn" id="removeBtn" aria-label="Remove image" type="button">✕</button>
+        </div>
+      </section>
+
+      <!-- ── Question + Language ──────────────────────────────────────────── -->
+      <section class="section question-section">
+        <label class="field-label" for="questionInput">Your Question</label>
+        <div class="input-group">
+          <span class="input-icon">💬</span>
+          <input
+            type="text"
+            id="questionInput"
+            name="question"
+            placeholder="e.g. What colour is the shirt? How many people are there?"
+            maxlength="500"
+            autocomplete="off"
+            spellcheck="true"
+            aria-label="Type your question about the image"
+          />
+        </div>
+        <div class="char-count"><span id="charCount">0</span> / 500</div>
+
+        <label class="field-label" for="languageSelect" style="margin-top:1.25rem;">
+          Output Language
+        </label>
+        <div class="select-wrap">
+          <select id="languageSelect" name="language" aria-label="Select output language">
+            {% for lang in languages %}
+            <option value="{{ lang.lower() }}"
+              {% if lang.lower() == "english" %}selected{% endif %}>
+              {{ lang }}
+            </option>
+            {% endfor %}
+          </select>
+          <span class="select-arrow">▾</span>
+        </div>
+      </section>
+
+      <!-- ── Submit ───────────────────────────────────────────────────────── -->
+      <div class="section submit-section">
+        <button class="btn-submit" id="submitBtn" type="button" aria-live="polite">
+          <span class="btn-text">Get Answer</span>
+          <span class="btn-icon">→</span>
+        </button>
+      </div>
+
+      <!-- ── Loading ──────────────────────────────────────────────────────── -->
+      <div class="loading-wrap hidden" id="loadingWrap" aria-live="polite" aria-label="Processing">
+        <div class="spinner">
+          <div class="spinner-ring"></div>
+          <div class="spinner-ring"></div>
+          <div class="spinner-ring"></div>
+        </div>
+        <p class="loading-text" id="loadingText">Analysing image…</p>
+      </div>
+
+      <!-- ── Answer block ─────────────────────────────────────────────────── -->
+      <div class="answer-wrap hidden" id="answerWrap" aria-live="polite">
+        <div class="answer-header">
+          <span class="answer-badge" id="answerLang">English</span>
+          <span class="answer-title">Answer</span>
+          <button class="copy-btn" id="copyBtn" title="Copy answer" type="button">⎘ Copy</button>
+        </div>
+        <p class="answer-text" id="answerText"></p>
+
+        <!-- English fallback (shown when translated) -->
+        <div class="english-note hidden" id="englishNote">
+          <strong>English:</strong> <span id="englishText"></span>
+        </div>
+
+        <button class="btn-reset" id="resetBtn" type="button">Ask Another Question</button>
+      </div>
+
+      <!-- ── Error block ──────────────────────────────────────────────────── -->
+      <div class="error-wrap hidden" id="errorWrap" role="alert">
+        <span class="error-icon">⚠️</span>
+        <p class="error-text" id="errorText"></p>
+        <button class="btn-reset" id="errorResetBtn" type="button">Try Again</button>
+      </div>
+
+    </main><!-- /card -->
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <p>
+        Built with
+        <span class="footer-tech">Flask · Gemini Vision · PIL · deep-translator</span>
+        &nbsp;|&nbsp;
+        Final Year Project — Dhanekula Institute of Engineering &amp; Technology
+      </p>
+    </footer>
+
+  </div><!-- /page-wrapper -->
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
