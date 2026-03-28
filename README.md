@@ -153,11 +153,3 @@ If you like this project:
 ✔ Share with others
 ✔ Connect for collaboration
 
----
-
-## 👨‍💻 Developer
-
-**Harsha Vardhan**
-🚀 AI Developer | Freelancer
-
-> 💥 Building real-world AI solutions that create impact
